@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  webpush-relay:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ghcr.io/${GITHUB_REPOSITORY:-humidyne-labs/webpush-relay}:latest
+    container_name: humid1-webpush-relay
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6000:6000"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:6000/healthz\")' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

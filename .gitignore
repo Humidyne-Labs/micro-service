@@ -1,0 +1,3 @@
+# remove private tokens
+*.env
+*.keypair
