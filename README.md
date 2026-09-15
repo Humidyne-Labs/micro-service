@@ -1,6 +1,6 @@
-# 🔔 webpush-relay
+# 🔔 webpush-relay (python micro-service)
 
-A lightweight, vendor-agnostic Python microservice bridging IoT rule engines (such as **ThingsBoard**) with standard W3C Web Push (VAPID) endpoints.
+A lightweight, vendor-agnostic Python micro-service bridging IoT rule engines (such as **ThingsBoard**) with standard W3C Web Push (VAPID) endpoints.
 
 Delivers 24/7 background alerts to Progressive Web Apps (PWAs) and browsers without requiring Firebase SDKs, client-side FCM libraries, or proprietary cloud dependencies.
 
@@ -36,7 +36,7 @@ Delivers 24/7 background alerts to Progressive Web Apps (PWAs) and browsers with
 Copy `.env.example` to `.env` and populate your VAPID credentials:
 
 ```env
-VAPID_PUBLIC_KEY=your_private_vapid_key_here
+VAPID_PUBLIC_KEY=your_public_vapid_key_here
 VAPID_PRIVATE_KEY=your_private_vapid_key_here
 VAPID_SUBJECT=mailto:email@address.com
 PORT=6000
@@ -73,14 +73,31 @@ docker compose up -d
 
 | Variable | Description | Default | Required |
 | --- | --- | --- | --- |
-| `VAPID_PUBLIC_KEY` | Hosted public key | - | **IDK** |
+| `VAPID_PUBLIC_KEY` | Base64 URL-safe VAPID public key exposed to PWA clients | — | No |
 | `VAPID_PRIVATE_KEY` | Base64 URL-safe VAPID private key | — | **Yes** |
-| `VAPID_SUBJECT` | Contact URI passed in VAPID headers | `mailto:admin@humid1.com` | No |
+| `VAPID_SUBJECT` | Contact URI passed in VAPID headers | `mailto:email@address.com` | No |
 | `PORT` | Internal container port | `6000` | No |
 
 ---
 
 ## 📡 API Reference
+
+### Get Public VAPID Key
+
+`GET /api/v1/vapid-public-key`
+
+Used by PWA clients to dynamically fetch the server's public key prior to calling `pushManager.subscribe()`.
+
+**Response (`200 OK`):**
+
+```json
+{
+  "public_key": "<your_public_vapid_key_here>"
+}
+
+```
+
+---
 
 ### Send Push Notification
 
@@ -93,15 +110,15 @@ docker compose up -d
 ```json
 {
   "subscription": {
-    "endpoint": "https://fcm.googleapis.com/fcm/send/...",
+    "endpoint": "[https://fcm.googleapis.com/fcm/send/](https://fcm.googleapis.com/fcm/send/)...",
     "expirationTime": null,
     "keys": {
-      "p256dh": "B...",
-      "auth": "a..."
+      "p256dh": "Blue...",
+      "auth": "armadillo..."
     }
   },
   "title": "HUMID1 Alert",
-  "body": "Relative humidity threshold breached!"
+  "body": "Relative Humidity Threshold Breached! Save the Armadillos!"
 }
 
 ```
@@ -115,6 +132,8 @@ docker compose up -d
 }
 
 ```
+
+---
 
 ### Health Check
 
@@ -135,9 +154,10 @@ docker compose up -d
 
 In your ThingsBoard Rule Chain, add a **REST API Call** node configured as follows:
 
-* **Endpoint URL pattern:** `[http://127.0.0.1:6000/api/v1/notify](http://127.0.0.1:6000/api/v1/notify)`
+* **Endpoint URL pattern:** `http://127.0.0.1:6000/api/v1/notify`
 * **Request Method:** `POST`
 * **Message Payload:**
+
 ```json
 {
   "subscription": ${ss_push_subscription},
