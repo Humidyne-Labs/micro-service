@@ -1,21 +1,14 @@
 """
-Module:       main.py
-Project:      HUMID1
-Author:       Humiditron
-Organization: Humidyne Labs
-Date:         2026-09-15
-License:      MIT
+Module:        main.py
+Project:       HUMID1
+Author:        Humiditron
+Organization:  Humidyne Labs
+Date:          2026-09-15
+License:       MIT
 
 Description:
     Serve encrypted FCM alerts from thingsboard via REST API. 
        - micro-service used in humid1.com server stack.
-
-Dependencies:
-    fastapi, pydantic, pywebpush, uvicorn, gunicorn
-    Install Note: 'pip install fastapi pydantic pywebpush uvicorn gunicorn'
-
-Usage:
-    python main.py
 """
 
 import os
@@ -30,10 +23,9 @@ from pywebpush import webpush, WebPushException
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("webpush-relay")
 
-APP_VERSION = "1.0.7"
+APP_VERSION = "1.0.8"
 START_TIME = datetime.now(timezone.utc)
 
-# Diagnostic telemetry state
 diagnostics_state = {
     "total_notifications_sent": 0,
     "total_errors": 0,
