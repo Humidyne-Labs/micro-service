@@ -30,7 +30,7 @@ from pywebpush import webpush, WebPushException
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("webpush-relay")
 
-APP_VERSION = "1.0.3"
+APP_VERSION = "1.0.4"
 START_TIME = datetime.now(timezone.utc)
 
 # Diagnostic telemetry state
