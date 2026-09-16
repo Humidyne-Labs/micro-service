@@ -40,7 +40,7 @@ diagnostics_state = {
     "last_error": None
 }
 
-app = FastAPI(title="HUMID1 Web Push Relay", version=APP_VERSION)
+app = FastAPI(title="HUMID1 Web Push Relay", version=APP_VERSION, root_path="/push")
 
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
