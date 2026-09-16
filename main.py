@@ -2,7 +2,7 @@
 Module:       main.py
 Project:      HUMID1
 Author:       Humiditron
-Organization  Humidyne Labs
+Organization: Humidyne Labs
 Date:         2026-09-15
 License:      MIT
 
@@ -22,7 +22,7 @@ import os
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Literal
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 from pywebpush import webpush, WebPushException
@@ -30,7 +30,7 @@ from pywebpush import webpush, WebPushException
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("webpush-relay")
 
-APP_VERSION = "1.0.4"
+APP_VERSION = "1.0.5"
 START_TIME = datetime.now(timezone.utc)
 
 # Diagnostic telemetry state
