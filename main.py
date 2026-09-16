@@ -30,7 +30,7 @@ from pywebpush import webpush, WebPushException
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("webpush-relay")
 
-APP_VERSION = "1.0.6"
+APP_VERSION = "1.0.7"
 START_TIME = datetime.now(timezone.utc)
 
 # Diagnostic telemetry state
@@ -40,7 +40,7 @@ diagnostics_state = {
     "last_error": None
 }
 
-app = FastAPI(title="HUMID1 Web Push Relay", version=APP_VERSION, root_path="/push")
+app = FastAPI(title="HUMID1 Web Push Relay", version=APP_VERSION)
 
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
@@ -59,6 +59,7 @@ class PushPayload(BaseModel):
 
 
 @app.get("/healthz", status_code=status.HTTP_200_OK)
+@app.get("/push/healthz", status_code=status.HTTP_200_OK)
 async def health_check():
     return {
         "status": "ok",
@@ -67,6 +68,7 @@ async def health_check():
 
 
 @app.get("/api/v1/diagnostics", status_code=status.HTTP_200_OK)
+@app.get("/push/api/v1/diagnostics", status_code=status.HTTP_200_OK)
 async def get_diagnostics():
     now = datetime.now(timezone.utc)
     uptime_seconds = int((now - START_TIME).total_seconds())
@@ -86,6 +88,7 @@ async def get_diagnostics():
 
 
 @app.get("/api/v1/vapid-public-key", status_code=status.HTTP_200_OK)
+@app.get("/push/api/v1/vapid-public-key", status_code=status.HTTP_200_OK)
 async def get_public_key():
     if not VAPID_PUBLIC_KEY:
         raise HTTPException(
@@ -96,6 +99,7 @@ async def get_public_key():
 
 
 @app.post("/api/v1/notify", status_code=status.HTTP_200_OK)
+@app.post("/push/api/v1/notify", status_code=status.HTTP_200_OK)
 async def send_notification(payload: PushPayload):
     if not VAPID_PRIVATE_KEY:
         logger.error("Attempted to send notification without VAPID_PRIVATE_KEY set.")
