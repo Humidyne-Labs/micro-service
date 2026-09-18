@@ -21,7 +21,7 @@ Delivers 24/7 background alerts to Progressive Web Apps (PWAs) and browsers with
 [ ThingsBoard Rule Engine ]
             │
             ▼ (POST /api/v1/notify)
-[ webpush-relay (Port 6000) ] ──── Signs VAPID ECDH Payload ────┐
+[ webpush-relay (Port 2000) ] ──── Signs VAPID ECDH Payload ────┐
                                                                 │
 [ PWA Service Worker ] ◄── Hardware Interrupt ◄── [ Google Push Endpoint ]
 
@@ -33,13 +33,13 @@ Delivers 24/7 background alerts to Progressive Web Apps (PWAs) and browsers with
 
 ### 1. Environment Configuration
 
-Copy `.env.example` to `.env` and populate your VAPID credentials:
+Copy `env.example` to `.env` and populate your VAPID credentials:
 
 ```env
 VAPID_PUBLIC_KEY=your_public_vapid_key_here
 VAPID_PRIVATE_KEY=your_private_vapid_key_here
 VAPID_SUBJECT=mailto:email@address.com
-PORT=6000
+PORT=2000
 
 ```
 
@@ -54,7 +54,7 @@ services:
     container_name: humid1-webpush-relay
     restart: unless-stopped
     ports:
-      - "127.0.0.1:6000:6000"
+      - "127.0.0.1:2000:2000"
     env_file:
       - .env
 
@@ -73,7 +73,7 @@ docker compose up -d
 
 | Variable | Description | Default | Required |
 | --- | --- | --- | --- |
-| `VAPID_PUBLIC_KEY` | Base64 URL-safe VAPID public key exposed to PWA clients | — | No |
+| `VAPID_PUBLIC_KEY` | Base64 URL-safe VAPID public key exposed to PWA clients | — | **Yes** |
 | `VAPID_PRIVATE_KEY` | Base64 URL-safe VAPID private key | — | **Yes** |
 | `VAPID_SUBJECT` | Contact URI passed in VAPID headers | `mailto:email@address.com` | No |
 | `PORT` | Internal container port | `6000` | No |
@@ -82,11 +82,15 @@ docker compose up -d
 
 ## 📡 API Reference
 
+All endpoints are available under two equivalent path prefixes:
+- `/api/v1/...` — primary
+- `/push/api/v1/...` — reverse-proxy alias (e.g. when mounted at a sub-path)
+
 ### Get Public VAPID Key
 
 `GET /api/v1/vapid-public-key`
 
-Used by PWA clients to dynamically fetch the server's public key prior to calling `pushManager.subscribe()`.
+Used by PWA clients to dynamically fetch the server's public key prior to calling `pushManager.subscribe()`. Returns `404` if `VAPID_PUBLIC_KEY` is not configured on the server.
 
 **Response (`200 OK`):**
 
@@ -110,7 +114,7 @@ Used by PWA clients to dynamically fetch the server's public key prior to callin
 ```json
 {
   "subscription": {
-    "endpoint": "[https://fcm.googleapis.com/fcm/send/](https://fcm.googleapis.com/fcm/send/)...",
+    "endpoint": "https://fcm.googleapis.com/fcm/send/...",
     "expirationTime": null,
     "keys": {
       "p256dh": "Blue...",
@@ -118,10 +122,26 @@ Used by PWA clients to dynamically fetch the server's public key prior to callin
     }
   },
   "title": "HUMID1 Alert",
-  "body": "Relative Humidity Threshold Breached! Save the Armadillos!"
+  "body": "Relative Humidity Threshold Breached! Save the Armadillos!",
+  "severity": "CRITICAL",
+  "deviceId": "abc123",
+  "deviceName": "Cabinet Sensor 1",
+  "url": "/dashboard",
+  "tag": "humidity-alert"
 }
 
 ```
+
+| Field | Type | Description | Required |
+| --- | --- | --- | --- |
+| `subscription` | object | W3C Push API subscription object | **Yes** |
+| `title` | string | Notification title | **Yes** |
+| `body` | string | Notification body text | **Yes** |
+| `severity` | string | Alarm severity: `CRITICAL`, `MAJOR`, `MINOR`, `WARNING`, `INFO`, `INDETERMINATE` | No (default: `CRITICAL`) |
+| `deviceId` | string | ThingsBoard device ID | No |
+| `deviceName` | string | Human-readable device name | No |
+| `url` | string | URL to open when the notification is clicked | No (default: `/`) |
+| `tag` | string | Notification tag for deduplication | No |
 
 **Response (`200 OK`):**
 
@@ -137,16 +157,51 @@ Used by PWA clients to dynamically fetch the server's public key prior to callin
 
 ### Health Check
 
-`GET /healthz`
+`GET /healthz`  
+`GET /push/healthz`
 
 **Response (`200 OK`):**
 
 ```json
 {
-  "status": "ok"
+  "status": "ok",
+  "version": "1.0.8"
 }
 
 ```
+
+---
+
+### Diagnostics
+
+`GET /api/v1/diagnostics`  
+`GET /push/api/v1/diagnostics`
+
+Returns server status, uptime, VAPID configuration state, and running notification metrics.
+
+**Response (`200 OK`):**
+
+```json
+{
+  "version": "1.0.8",
+  "status": "healthy",
+  "server_time": "2026-09-18T00:00:00+00:00",
+  "uptime_seconds": 3600,
+  "config": {
+    "vapid_public_key_configured": true,
+    "vapid_private_key_configured": true,
+    "vapid_subject": "mailto:email@address.com"
+  },
+  "metrics": {
+    "total_notifications_sent": 42,
+    "total_errors": 0,
+    "last_error": null
+  }
+}
+
+```
+
+> **Note:** `"status"` is `"healthy"` when `VAPID_PRIVATE_KEY` is set, or `"degraded"` otherwise.
 
 ---
 
@@ -154,7 +209,7 @@ Used by PWA clients to dynamically fetch the server's public key prior to callin
 
 In your ThingsBoard Rule Chain, add a **REST API Call** node configured as follows:
 
-* **Endpoint URL pattern:** `http://127.0.0.1:6000/api/v1/notify`
+* **Endpoint URL pattern:** `http://127.0.0.1:2000/api/v1/notify`
 * **Request Method:** `POST`
 * **Message Payload:**
 
